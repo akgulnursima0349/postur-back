@@ -1,0 +1,2291 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/users/sync": {
+      "post": {
+        "description": "Call this right after Firebase login. Creates the user if first time, returns existing user otherwise. Check `isNewUser` to decide whether to show onboarding.",
+        "operationId": "AuthController_syncUser",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "User synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SyncUserResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing Firebase token"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sync Firebase user with database",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "description": "Returns the User record with the nested UserProfile.",
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "uuid-v4"
+                        },
+                        "firebaseUid": {
+                          "type": "string",
+                          "example": "firebase-uid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "user@example.com",
+                          "nullable": true
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "profile": {
+                          "$ref": "#/components/schemas/UserProfileDto"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user profile",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "description": "Updates name, gender, and date of birth. All fields optional — send only what changed.",
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update personal info",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users/profile/physical": {
+      "put": {
+        "description": "Updates height (cm) and weight (kg). Used during onboarding and settings.",
+        "operationId": "UsersController_updatePhysical",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePhysicalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Physical info updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update physical measurements",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users/onboarding-status": {
+      "get": {
+        "description": "`hasProfile` = name/gender filled. `hasPhysicalData` = height/weight filled. `onboardingCompleted` is set to true only after user explicitly completes the flow.",
+        "operationId": "UsersController_getOnboardingStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Onboarding status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "onboardingCompleted": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "hasProfile": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "hasPhysicalData": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get onboarding completion status",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/devices/pair": {
+      "post": {
+        "description": "Links a device by serial number to the current user. If the device was previously paired by this user, it re-pairs it.",
+        "operationId": "DevicesController_pairDevice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Device paired successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Device already paired to another user"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pair a new device",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/devices/my-device": {
+      "get": {
+        "description": "Returns the most recently paired device. Returns 404 if no device is paired.",
+        "operationId": "DevicesController_getMyDevice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Device retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No device paired"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user's paired device",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/devices/{id}/settings": {
+      "patch": {
+        "description": "Partially update device configuration. Send only the fields you want to change.",
+        "operationId": "DevicesController_updateSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeviceSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update device settings",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/devices/{id}/sync": {
+      "post": {
+        "description": "Update battery state, battery percentage and firmware version from device. Sets syncStatus to SYNCED.",
+        "operationId": "DevicesController_syncDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device synced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sync device telemetry",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/devices/{id}/status": {
+      "get": {
+        "description": "Lightweight status check — battery level, charge state, sync state, firmware.",
+        "operationId": "DevicesController_getStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceStatusDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get device battery and sync status",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/devices/{id}/unpair": {
+      "delete": {
+        "description": "Removes the device record. The device can be re-paired later with the serial number.",
+        "operationId": "DevicesController_unpairDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device unpaired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UnpairResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair device",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/posture/sessions/start": {
+      "post": {
+        "description": "Returns a session with an `id`. Store this `id` to call `sessions/end` and `data/batch` later.",
+        "operationId": "PostureController_startSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PostureSessionDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a new posture session",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/sessions/end": {
+      "post": {
+        "description": "Closes the session by setting `endTime` and summary stats. Call this when the user stops wearing the device.",
+        "operationId": "PostureController_endSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PostureSessionDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "End an active posture session",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/data/batch": {
+      "post": {
+        "description": "Send multiple sensor readings at once. Recommended: batch every 60 readings (~1 min of data at 1 Hz). Returns count of rows saved.",
+        "operationId": "PostureController_batchSensorData",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchSensorDataDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sensor data saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BatchInsertResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload sensor data in batch",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/calibrate": {
+      "post": {
+        "description": "**No request body needed.** Call this while the user is sitting/standing in their natural upright position. The returned reference axis values define what \"upright\" means for this user. Store these values on the device to use as the baseline for future posture detection.",
+        "operationId": "PostureController_calibrate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Calibration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CalibrationResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calibrate to neutral posture",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/sessions": {
+      "get": {
+        "description": "Returns sessions newest-first. Use `page` and `limit` query params to paginate.",
+        "operationId": "PostureController_getSessions",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-based)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessions retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PaginatedSessionsResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get paginated posture sessions",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/sessions/{id}/stats": {
+      "get": {
+        "description": "Returns the session + computed stats (upright %, score, duration).",
+        "operationId": "PostureController_getSessionStats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stats retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PostureSessionStatsResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get detailed stats for a session",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/posture/score": {
+      "get": {
+        "description": "Averages `averageScore` across all completed sessions today. Returns `score: null` with a message if no sessions completed yet today.",
+        "operationId": "PostureController_getScore",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Score retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PostureScoreResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get today's posture score",
+        "tags": [
+          "Posture"
+        ]
+      }
+    },
+    "/api/goals/daily": {
+      "get": {
+        "description": "Returns the goals set for today. If no custom goals are set, returns system defaults (30 min exercise, 8h upright, 1h device). Check `isDefault: true` for this case.",
+        "operationId": "GoalsController_getDailyGoal",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daily goals retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DailyGoalResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get today's daily goals",
+        "tags": [
+          "Goals"
+        ]
+      },
+      "put": {
+        "description": "Creates or replaces the goals for today. Send only the fields you want to change.",
+        "operationId": "GoalsController_updateDailyGoal",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDailyGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Daily goals updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DailyGoalResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set today's daily goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/api/progress/daily": {
+      "get": {
+        "description": "Returns how much the user actually exercised, was upright, and used the device today. Combine with GET /api/goals/daily to show progress bars.",
+        "operationId": "ProgressController_getDailyProgress",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daily progress retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DailyProgressResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get today's actual progress",
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/progress/analytics": {
+      "get": {
+        "description": "Returns aggregated stats and daily breakdown for the chosen period. Use `dailyData` to draw charts.",
+        "operationId": "ProgressController_getAnalytics",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Time period to aggregate. Defaults to \"week\".",
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytics retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AnalyticsResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get analytics summary for a time period",
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/progress/streak": {
+      "get": {
+        "description": "Returns how many consecutive days the user has been active.",
+        "operationId": "ProgressController_getStreak",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Streak retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StreakResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current activity streak",
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/coach/messages": {
+      "post": {
+        "description": "**Conversation flow:**\n\n1. First message: do NOT send `conversationId` → a new conversation is created.\n2. Follow-up messages: send the `conversationId` returned from the previous response to continue the same conversation.\n\n_Note: Currently returns mock responses. OpenAI integration coming soon._",
+        "operationId": "CoachController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent, assistant response returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SendMessageResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a message to the AI coach",
+        "tags": [
+          "Coach"
+        ]
+      }
+    },
+    "/api/coach/conversations": {
+      "get": {
+        "description": "Returns conversations with the last message included for preview.",
+        "operationId": "CoachController_getConversations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Conversations retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CoachConversationDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all coach conversations",
+        "tags": [
+          "Coach"
+        ]
+      }
+    },
+    "/api/coach/conversations/{id}/messages": {
+      "get": {
+        "description": "Returns messages in chronological order (oldest first).",
+        "operationId": "CoachController_getMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CoachMessageDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get full message history for a conversation",
+        "tags": [
+          "Coach"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Straight API",
+    "description": "Backend API for the Straight posture correction mobile app. All endpoints except /api/users/sync require a Firebase Bearer token.",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "example": "firebase-uid-abc123"
+          },
+          "email": {
+            "type": "object",
+            "example": "user@example.com"
+          },
+          "phoneNumber": {
+            "type": "object",
+            "example": "+905551234567"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firebaseUid",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "firstName": {
+            "type": "object",
+            "example": "Ayşe"
+          },
+          "lastName": {
+            "type": "object",
+            "example": "Yılmaz"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "NOT_SPECIFIED"
+            ],
+            "example": "FEMALE"
+          },
+          "dateOfBirth": {
+            "type": "object",
+            "example": "1995-06-15T00:00:00.000Z"
+          },
+          "heightCm": {
+            "type": "object",
+            "example": 168
+          },
+          "weightKg": {
+            "type": "object",
+            "example": 65.5
+          },
+          "onboardingCompleted": {
+            "type": "boolean",
+            "example": false
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "gender",
+          "onboardingCompleted",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SyncUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          "profile": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserProfileDto"
+              }
+            ]
+          },
+          "isNewUser": {
+            "type": "boolean",
+            "example": true,
+            "description": "true if this is the first time the user logged in"
+          }
+        },
+        "required": [
+          "user",
+          "profile",
+          "isNewUser"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "Ayşe"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Yılmaz"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "NOT_SPECIFIED"
+            ],
+            "example": "FEMALE"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "example": "1995-06-15"
+          }
+        }
+      },
+      "UpdatePhysicalDto": {
+        "type": "object",
+        "properties": {
+          "heightCm": {
+            "type": "number",
+            "example": 168,
+            "description": "Height in centimeters"
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 65.5,
+            "description": "Weight in kilograms"
+          }
+        }
+      },
+      "DeviceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "nickname": {
+            "type": "object",
+            "example": "My Straight Device"
+          },
+          "serialNumber": {
+            "type": "string",
+            "example": "STR-000123"
+          },
+          "firmwareVersion": {
+            "type": "object",
+            "example": "1.2.3"
+          },
+          "deviceMode": {
+            "type": "string",
+            "enum": [
+              "CASUAL",
+              "TRAINING"
+            ],
+            "example": "CASUAL"
+          },
+          "vibrationPower": {
+            "type": "number",
+            "example": 2,
+            "description": "1–4 scale"
+          },
+          "vibrationSpeed": {
+            "type": "string",
+            "enum": [
+              "FAST_SHORT",
+              "MEDIUM_FAST",
+              "MEDIUM_SLOW",
+              "SLOW_LONG"
+            ],
+            "example": "MEDIUM_FAST"
+          },
+          "alertDelaySeconds": {
+            "type": "number",
+            "example": 5
+          },
+          "alertLevelDegrees": {
+            "type": "number",
+            "example": 30
+          },
+          "triggerLimitSeconds": {
+            "type": "number",
+            "example": 10
+          },
+          "batteryState": {
+            "type": "string",
+            "enum": [
+              "EMPTY",
+              "CRITICAL",
+              "IDLE",
+              "CHARGING",
+              "FULL"
+            ],
+            "example": "IDLE"
+          },
+          "batteryPercentage": {
+            "type": "object",
+            "example": 85
+          },
+          "syncStatus": {
+            "type": "string",
+            "enum": [
+              "UNSYNCED",
+              "SYNCING",
+              "SYNCED"
+            ],
+            "example": "UNSYNCED"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "serialNumber",
+          "deviceMode",
+          "vibrationPower",
+          "vibrationSpeed",
+          "alertDelaySeconds",
+          "alertLevelDegrees",
+          "triggerLimitSeconds",
+          "batteryState",
+          "syncStatus",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DeviceStatusDto": {
+        "type": "object",
+        "properties": {
+          "batteryState": {
+            "type": "string",
+            "enum": [
+              "EMPTY",
+              "CRITICAL",
+              "IDLE",
+              "CHARGING",
+              "FULL"
+            ],
+            "example": "CHARGING"
+          },
+          "batteryPercentage": {
+            "type": "object",
+            "example": 72
+          },
+          "syncStatus": {
+            "type": "string",
+            "enum": [
+              "UNSYNCED",
+              "SYNCING",
+              "SYNCED"
+            ],
+            "example": "SYNCED"
+          },
+          "firmwareVersion": {
+            "type": "object",
+            "example": "1.3.0"
+          }
+        },
+        "required": [
+          "batteryState",
+          "syncStatus"
+        ]
+      },
+      "UnpairResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Device unpaired successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "PairDeviceDto": {
+        "type": "object",
+        "properties": {
+          "serialNumber": {
+            "type": "string",
+            "example": "STR-000123",
+            "description": "Device serial number"
+          },
+          "nickname": {
+            "type": "string",
+            "example": "My Straight Device"
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "example": "1.2.3"
+          }
+        },
+        "required": [
+          "serialNumber"
+        ]
+      },
+      "UpdateDeviceSettingsDto": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "example": "My Device"
+          },
+          "deviceMode": {
+            "type": "string",
+            "enum": [
+              "CASUAL",
+              "TRAINING"
+            ]
+          },
+          "vibrationPower": {
+            "type": "number",
+            "example": 2,
+            "minimum": 1,
+            "maximum": 4
+          },
+          "vibrationSpeed": {
+            "type": "string",
+            "enum": [
+              "FAST_SHORT",
+              "MEDIUM_FAST",
+              "MEDIUM_SLOW",
+              "SLOW_LONG"
+            ]
+          },
+          "alertDelaySeconds": {
+            "type": "number",
+            "example": 5,
+            "description": "Alert delay in seconds"
+          },
+          "alertLevelDegrees": {
+            "type": "number",
+            "example": 30,
+            "description": "Alert level in degrees"
+          },
+          "triggerLimitSeconds": {
+            "type": "number",
+            "example": 10,
+            "description": "Trigger limit in seconds"
+          }
+        }
+      },
+      "SyncDeviceDto": {
+        "type": "object",
+        "properties": {
+          "batteryState": {
+            "type": "string",
+            "enum": [
+              "EMPTY",
+              "CRITICAL",
+              "IDLE",
+              "CHARGING",
+              "FULL"
+            ]
+          },
+          "batteryPercentage": {
+            "type": "number",
+            "example": 85,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "example": "1.3.0"
+          }
+        }
+      },
+      "PostureSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "startTime": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T09:00:00.000Z"
+          },
+          "endTime": {
+            "type": "object",
+            "example": "2024-01-15T09:30:00.000Z"
+          },
+          "uprightTimeMinutes": {
+            "type": "object",
+            "example": 25.5,
+            "description": "Minutes spent upright"
+          },
+          "totalTimeMinutes": {
+            "type": "object",
+            "example": 30,
+            "description": "Total session duration in minutes"
+          },
+          "averageScore": {
+            "type": "object",
+            "example": 82.5,
+            "description": "Score 0–100"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "startTime",
+          "createdAt"
+        ]
+      },
+      "SessionStatsDto": {
+        "type": "object",
+        "properties": {
+          "totalDataPoints": {
+            "type": "number",
+            "example": 360
+          },
+          "uprightDataPoints": {
+            "type": "number",
+            "example": 300
+          },
+          "uprightPercent": {
+            "type": "number",
+            "example": 83,
+            "description": "Percentage of time upright"
+          },
+          "averageScore": {
+            "type": "object",
+            "example": 82.5
+          },
+          "durationMinutes": {
+            "type": "object",
+            "example": 30
+          }
+        },
+        "required": [
+          "totalDataPoints",
+          "uprightDataPoints",
+          "uprightPercent"
+        ]
+      },
+      "PostureSessionStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/PostureSessionDto"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/SessionStatsDto"
+          }
+        },
+        "required": [
+          "session",
+          "stats"
+        ]
+      },
+      "BatchInsertResponseDto": {
+        "type": "object",
+        "properties": {
+          "inserted": {
+            "type": "number",
+            "example": 60,
+            "description": "Number of sensor data rows saved"
+          }
+        },
+        "required": [
+          "inserted"
+        ]
+      },
+      "CalibrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "calibrated": {
+            "type": "boolean",
+            "example": true
+          },
+          "referenceAxisX": {
+            "type": "number",
+            "example": 0,
+            "description": "Reference X-axis value at neutral posture"
+          },
+          "referenceAxisY": {
+            "type": "number",
+            "example": 0,
+            "description": "Reference Y-axis value at neutral posture"
+          },
+          "referenceAxisZ": {
+            "type": "number",
+            "example": 9.81,
+            "description": "Reference Z-axis value at neutral posture"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calibrated",
+          "referenceAxisX",
+          "referenceAxisY",
+          "referenceAxisZ",
+          "timestamp"
+        ]
+      },
+      "PostureScoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "object",
+            "example": 78,
+            "description": "Today's average score 0–100, null if no sessions yet"
+          },
+          "sessionsToday": {
+            "type": "number",
+            "example": 2
+          },
+          "totalUprightMinutes": {
+            "type": "number",
+            "example": 95.5,
+            "description": "Total upright minutes today"
+          },
+          "message": {
+            "type": "string",
+            "example": "No completed sessions today"
+          }
+        }
+      },
+      "PaginatedSessionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostureSessionDto"
+            }
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 45
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "limit",
+          "total",
+          "totalPages"
+        ]
+      },
+      "StartSessionDto": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "example": "2024-01-15T09:00:00Z"
+          },
+          "deviceId": {
+            "type": "string",
+            "example": "device-uuid-here"
+          }
+        },
+        "required": [
+          "startTime"
+        ]
+      },
+      "EndSessionDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "example": "session-uuid-here"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "2024-01-15T09:30:00Z"
+          },
+          "uprightTimeMinutes": {
+            "type": "number",
+            "example": 25.5
+          },
+          "totalTimeMinutes": {
+            "type": "number",
+            "example": 30
+          },
+          "averageScore": {
+            "type": "number",
+            "example": 82.5
+          }
+        },
+        "required": [
+          "sessionId",
+          "endTime"
+        ]
+      },
+      "SensorDataItemDto": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "example": "2024-01-15T09:05:00Z"
+          },
+          "axisX": {
+            "type": "number",
+            "example": 0.12
+          },
+          "axisY": {
+            "type": "number",
+            "example": -0.05
+          },
+          "axisZ": {
+            "type": "number",
+            "example": 9.81
+          },
+          "isUpright": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "timestamp",
+          "axisX",
+          "axisY",
+          "axisZ",
+          "isUpright"
+        ]
+      },
+      "BatchSensorDataDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "example": "session-uuid-here"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SensorDataItemDto"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "data"
+        ]
+      },
+      "DailyGoalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4",
+            "description": "null if returning defaults"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "exerciseDurationMinutes": {
+            "type": "number",
+            "example": 30,
+            "description": "Exercise goal in minutes"
+          },
+          "uprightTimeMinutes": {
+            "type": "number",
+            "example": 480,
+            "description": "Upright time goal in minutes (8 hours)"
+          },
+          "deviceUsageMinutes": {
+            "type": "number",
+            "example": 60,
+            "description": "Device usage goal in minutes"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T00:00:00.000Z"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "example": true,
+            "description": "true when no custom goal set today — showing system defaults"
+          }
+        },
+        "required": [
+          "exerciseDurationMinutes",
+          "uprightTimeMinutes",
+          "deviceUsageMinutes",
+          "date"
+        ]
+      },
+      "UpdateDailyGoalDto": {
+        "type": "object",
+        "properties": {
+          "exerciseDurationMinutes": {
+            "type": "number",
+            "example": 30,
+            "description": "Exercise duration in minutes"
+          },
+          "uprightTimeMinutes": {
+            "type": "number",
+            "example": 480,
+            "description": "Upright time goal in minutes"
+          },
+          "deviceUsageMinutes": {
+            "type": "number",
+            "example": 60,
+            "description": "Device usage goal in minutes"
+          }
+        }
+      },
+      "DailyProgressResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T00:00:00.000Z"
+          },
+          "exerciseActualMinutes": {
+            "type": "number",
+            "example": 28.5,
+            "description": "Minutes exercised today"
+          },
+          "uprightActualMinutes": {
+            "type": "number",
+            "example": 320,
+            "description": "Minutes spent upright today"
+          },
+          "deviceUsageActualMinutes": {
+            "type": "number",
+            "example": 55,
+            "description": "Minutes device was used today"
+          },
+          "streakDays": {
+            "type": "number",
+            "example": 7,
+            "description": "Consecutive days streak"
+          }
+        },
+        "required": [
+          "date",
+          "exerciseActualMinutes",
+          "uprightActualMinutes",
+          "deviceUsageActualMinutes",
+          "streakDays"
+        ]
+      },
+      "DailyProgressDataDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exerciseActualMinutes": {
+            "type": "number",
+            "example": 28.5
+          },
+          "uprightActualMinutes": {
+            "type": "number",
+            "example": 320
+          },
+          "deviceUsageActualMinutes": {
+            "type": "number",
+            "example": 55
+          },
+          "streakDays": {
+            "type": "number",
+            "example": 7
+          }
+        },
+        "required": [
+          "date",
+          "exerciseActualMinutes",
+          "uprightActualMinutes",
+          "deviceUsageActualMinutes",
+          "streakDays"
+        ]
+      },
+      "AnalyticsResponseDto": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "month",
+              "year"
+            ],
+            "example": "week"
+          },
+          "startDate": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-08T00:00:00.000Z"
+          },
+          "endDate": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T00:00:00.000Z"
+          },
+          "totalSessions": {
+            "type": "number",
+            "example": 12,
+            "description": "Total sessions in period"
+          },
+          "averageUprightMinutes": {
+            "type": "number",
+            "example": 245,
+            "description": "Average upright minutes per day"
+          },
+          "averageScore": {
+            "type": "object",
+            "example": 79,
+            "description": "Average posture score, null if no sessions"
+          },
+          "dailyData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyProgressDataDto"
+            }
+          }
+        },
+        "required": [
+          "period",
+          "startDate",
+          "endDate",
+          "totalSessions",
+          "averageUprightMinutes",
+          "dailyData"
+        ]
+      },
+      "StreakResponseDto": {
+        "type": "object",
+        "properties": {
+          "currentStreak": {
+            "type": "number",
+            "example": 7,
+            "description": "Number of consecutive active days"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "currentStreak",
+          "date"
+        ]
+      },
+      "CoachMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "conversationId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ASSISTANT"
+            ],
+            "example": "ASSISTANT"
+          },
+          "content": {
+            "type": "string",
+            "example": "Great question! To improve your posture while sitting, keep your feet flat on the floor."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "role",
+          "content",
+          "createdAt"
+        ]
+      },
+      "SendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "example": "uuid-v4",
+            "description": "Use this ID for follow-up messages"
+          },
+          "message": {
+            "$ref": "#/components/schemas/CoachMessageDto"
+          }
+        },
+        "required": [
+          "conversationId",
+          "message"
+        ]
+      },
+      "LastMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ASSISTANT"
+            ],
+            "example": "USER"
+          },
+          "content": {
+            "type": "string",
+            "example": "How can I improve my posture?"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "createdAt"
+        ]
+      },
+      "CoachConversationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "userId": {
+            "type": "string",
+            "example": "uuid-v4"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "messages": {
+            "description": "Last message in conversation",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LastMessageDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "createdAt",
+          "messages"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "example": "How can I improve my posture while sitting?"
+          },
+          "conversationId": {
+            "type": "string",
+            "example": "uuid-of-existing-conversation",
+            "description": "If provided, continues existing conversation"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      }
+    }
+  }
+}

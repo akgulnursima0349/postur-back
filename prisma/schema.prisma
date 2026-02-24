@@ -1,0 +1,179 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Gender {
+  MALE
+  FEMALE
+  NOT_SPECIFIED
+}
+
+enum DeviceMode {
+  CASUAL
+  TRAINING
+}
+
+enum VibrationSpeed {
+  FAST_SHORT
+  MEDIUM_FAST
+  MEDIUM_SLOW
+  SLOW_LONG
+}
+
+enum BatteryState {
+  EMPTY
+  CRITICAL
+  IDLE
+  CHARGING
+  FULL
+}
+
+enum SyncStatus {
+  UNSYNCED
+  SYNCING
+  SYNCED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique
+  email       String?
+  phoneNumber String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile         UserProfile?
+  devices         Device[]
+  sessions        PostureSession[]
+  dailyGoals      DailyGoal[]
+  dailyProgresses DailyProgress[]
+  conversations   CoachConversation[]
+}
+
+model UserProfile {
+  id                  String    @id @default(uuid())
+  userId              String    @unique
+  firstName           String?
+  lastName            String?
+  gender              Gender    @default(NOT_SPECIFIED)
+  dateOfBirth         DateTime?
+  heightCm            Float?
+  weightKg            Float?
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Device {
+  id                  String         @id @default(uuid())
+  userId              String
+  nickname            String?
+  serialNumber        String         @unique
+  firmwareVersion     String?
+  deviceMode          DeviceMode     @default(CASUAL)
+  vibrationPower      Int            @default(2)
+  vibrationSpeed      VibrationSpeed @default(MEDIUM_FAST)
+  alertDelaySeconds   Int            @default(5)
+  alertLevelDegrees   Int            @default(30)
+  triggerLimitSeconds Int            @default(10)
+  batteryState        BatteryState   @default(IDLE)
+  batteryPercentage   Int?
+  syncStatus          SyncStatus     @default(UNSYNCED)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PostureSession {
+  id                 String    @id @default(uuid())
+  userId             String
+  startTime          DateTime
+  endTime            DateTime?
+  uprightTimeMinutes Float?
+  totalTimeMinutes   Float?
+  averageScore       Float?
+  createdAt          DateTime  @default(now())
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sensorData SensorData[]
+}
+
+model SensorData {
+  id        String   @id @default(uuid())
+  sessionId String
+  timestamp DateTime
+  axisX     Float
+  axisY     Float
+  axisZ     Float
+  isUpright Boolean
+
+  session PostureSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model DailyGoal {
+  id                      String   @id @default(uuid())
+  userId                  String
+  exerciseDurationMinutes Int      @default(30)
+  uprightTimeMinutes      Int      @default(480)
+  deviceUsageMinutes      Int      @default(60)
+  date                    DateTime @db.Date
+  createdAt               DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model DailyProgress {
+  id                       String   @id @default(uuid())
+  userId                   String
+  date                     DateTime @db.Date
+  exerciseActualMinutes    Float    @default(0)
+  uprightActualMinutes     Float    @default(0)
+  deviceUsageActualMinutes Float    @default(0)
+  streakDays               Int      @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model CoachConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages CoachMessage[]
+}
+
+model CoachMessage {
+  id             String      @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String      @db.Text
+  createdAt      DateTime    @default(now())
+
+  conversation CoachConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
