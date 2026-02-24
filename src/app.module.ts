@@ -32,7 +32,8 @@ export class AppModule implements OnModuleInit {
   onModuleInit() {
     if (admin.apps.length) return;
 
-    let serviceAccount: admin.ServiceAccount | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let serviceAccount: any = null;
 
     // 1. Önce env variable'dan dene (production/Render/Railway)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -51,10 +52,10 @@ export class AppModule implements OnModuleInit {
     if (serviceAccount) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        projectId: (serviceAccount as any).project_id,
+        projectId: serviceAccount.project_id as string,
       });
       this.logger.log(
-        `Firebase initialized for project: ${(serviceAccount as any).project_id}`,
+        `Firebase initialized for project: ${serviceAccount.project_id}`,
       );
     } else {
       this.logger.warn(
