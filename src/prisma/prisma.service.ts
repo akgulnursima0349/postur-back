@@ -9,7 +9,11 @@ export class PrismaService
 {
   constructor() {
     const connectionString = process.env.DATABASE_URL ?? '';
-    const adapter = new PrismaPg({ connectionString });
+    const isProduction = process.env.NODE_ENV === 'production' || connectionString.includes('supabase');
+    const adapter = new PrismaPg({
+      connectionString,
+      ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     super({ adapter } as any);
   }
