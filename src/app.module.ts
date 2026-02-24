@@ -32,25 +32,33 @@ export class AppModule implements OnModuleInit {
   onModuleInit() {
     if (admin.apps.length) return;
 
-    const serviceAccountPath = path.resolve(
-      process.cwd(),
-      'firebase-service-account.json',
-    );
+    let serviceAccount: admin.ServiceAccount | null = null;
 
-    if (fs.existsSync(serviceAccountPath)) {
-      const serviceAccount = JSON.parse(
-        fs.readFileSync(serviceAccountPath, 'utf8'),
+    // 1. Önce env variable'dan dene (production/Render/Railway)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } else {
+      // 2. Yoksa local dosyadan dene (local geliştirme)
+      const serviceAccountPath = path.resolve(
+        process.cwd(),
+        'firebase-service-account.json',
       );
+      if (fs.existsSync(serviceAccountPath)) {
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      }
+    }
+
+    if (serviceAccount) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id,
+        projectId: (serviceAccount as any).project_id,
       });
       this.logger.log(
-        `Firebase initialized with service account for project: ${serviceAccount.project_id}`,
+        `Firebase initialized for project: ${(serviceAccount as any).project_id}`,
       );
     } else {
       this.logger.warn(
-        'firebase-service-account.json not found. Firebase auth will not work.',
+        'No Firebase credentials found. Set FIREBASE_SERVICE_ACCOUNT env variable.',
       );
       admin.initializeApp({ projectId: 'placeholder-project' });
     }
